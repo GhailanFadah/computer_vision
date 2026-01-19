@@ -32,8 +32,9 @@ int main(int argc, char *argv[]) {
         cv::namedWindow("Video", 1); // identifies a window
         cv::Mat frame;
         cv::Mat grey;
-        cv:: Mat my_gray;
-        cv:: Mat my_sepia;
+        cv::Mat my_gray;
+        cv::Mat my_sepia;
+        cv::Mat my_blur;
        
         char dis = 'c';
 
@@ -53,6 +54,9 @@ int main(int argc, char *argv[]) {
                 }else if ( dis == 'p'){
                     sepia(frame, my_sepia);
                     cv::imshow("Video", my_sepia);
+                }else if (dis == 'b') {
+                    blur5x5_2(frame, my_blur);
+                    cv::imshow("Video", my_blur);
                 }else{
                     cv::imshow("Video", frame);
                 }
@@ -67,6 +71,8 @@ int main(int argc, char *argv[]) {
                     dis = 'h';
                 }else if (key == 'p'){
                     dis = 'p';
+                }else if(key == 'b'){
+                    dis = 'b';
                 }else if (key == 's'){
 
                     if (dis == 'g'){
@@ -75,6 +81,8 @@ int main(int argc, char *argv[]) {
                     imwrite("frame.png", my_gray);
                     }else if (dis == 'p'){
                         imwrite("frame.png", my_sepia);
+                    }else if(dis == 'b'){
+                        imwrite("frame.png", my_blur);
                     }else{
                         imwrite("frame.png", frame);
                     }

@@ -77,3 +77,97 @@ int sepia(cv::Mat &src, cv::Mat &dst){
     return 0;
 
 }
+
+int blur5x5_1(cv::Mat &src, cv::Mat &dst){
+    /*
+    function create a custom gauss 5X5 filter using at to access pxs
+    12421
+    24842
+    481684
+    24842
+    12421
+    input: cv::Mat &src, cv::Mat &dst
+    output <int> 0
+    */
+    src.copyTo(dst);
+
+    for (int i = 2; i<src.rows-2; i++){
+        for(int j = 2; j<src.cols-2; j++){
+            for(int c=0; c<3; c++){
+
+                // access the 5X5 and convs
+                int res = src.at<cv::Vec3b>(i-2, j-2)[c] + src.at<cv::Vec3b>(i-2, j-1)[c]*2 + src.at<cv::Vec3b>(i-2, j)[c]*4 + src.at<cv::Vec3b>(i-2, j+1)[c]*2 + src.at<cv::Vec3b>(i-2, j+2)[c]
+                + src.at<cv::Vec3b>(i-1, j-2)[c]*2 + src.at<cv::Vec3b>(i-1, j-1)[c]*4 + src.at<cv::Vec3b>(i-1, j)[c]*8 + src.at<cv::Vec3b>(i-1, j+1)[c]*4 + src.at<cv::Vec3b>(i-1, j+2)[c]*2
+                + src.at<cv::Vec3b>(i, j-2)[c]*4 + src.at<cv::Vec3b>(i, j-1)[c]*8 + src.at<cv::Vec3b>(i, j)[c]*16 + src.at<cv::Vec3b>(i, j+1)[c]*8 + src.at<cv::Vec3b>(i, j+2)[c]*4
+                + src.at<cv::Vec3b>(i+1, j-2)[c]*2 + src.at<cv::Vec3b>(i+1, j-1)[c]*4 + src.at<cv::Vec3b>(i+1, j)[c]*8 + src.at<cv::Vec3b>(i+1, j+1)[c]*4 + src.at<cv::Vec3b>(i+1, j+2)[c]*2
+                + src.at<cv::Vec3b>(i+2, j-2)[c] + src.at<cv::Vec3b>(i+2, j-1)[c]*2 + src.at<cv::Vec3b>(i+2, j)[c]*4 + src.at<cv::Vec3b>(i+2, j+1)[c]*2 + src.at<cv::Vec3b>(i+2, j+2)[c];
+
+                // scales range back to [0,255]
+                dst.at<cv::Vec3b>(i,j)[c] = res/100;
+
+            }
+        }
+    }
+
+    return(0);
+
+}
+
+int blur5x5_2(cv::Mat &src, cv::Mat &dst){
+    /*
+    function create a custom gauss 5X5 filter using pointers to access pxs
+    [12421
+    24842
+    481684
+    24842
+    12421]
+    input: cv::Mat &src, cv::Mat &dst
+    output <int> 0
+    */
+
+    cv::Mat tmp;
+    src.copyTo(tmp);
+
+    // loop conv using [1,2,4,2,1] filter
+    for(int i=0;i<src.rows;i++){
+        cv:: Vec3b *s_pt_mid = src.ptr<cv::Vec3b>(i);
+        cv:: Vec3b *t_pt = tmp.ptr<cv::Vec3b>(i);
+        for(int j=2;j<src.cols-2;j++){
+            for(int c=0;c<3;c++){
+
+                int res = s_pt_mid[j-2][c] + s_pt_mid[j-1][c]*2 + s_pt_mid[j][c]*4 + s_pt_mid[j+1][c]*2 + s_pt_mid[j+2][c];
+
+                // scales range back to [0,255]
+                t_pt[j][c]= res/10;
+
+            }
+        }
+
+    }
+
+    tmp.copyTo(dst);
+
+    // loop conv using [1,2,4,2,1] filter
+    for(int i=2;i<src.rows-2;i++){
+        // pointers for each row and dst row
+        cv:: Vec3b *s_pt_up2 = tmp.ptr<cv::Vec3b>(i-2);
+        cv:: Vec3b *s_pt_up1 = tmp.ptr<cv::Vec3b>(i-1);
+        cv:: Vec3b *s_pt_mid = tmp.ptr<cv::Vec3b>(i);
+        cv:: Vec3b *s_pt_down1 = tmp.ptr<cv::Vec3b>(i+1);
+        cv:: Vec3b *s_pt_down2 = tmp.ptr<cv::Vec3b>(i+2);
+        cv:: Vec3b *d_pt = dst.ptr<cv::Vec3b>(i);
+        for(int j=0;j<src.cols;j++){
+            for(int c=0;c<3;c++){
+
+                int res = s_pt_up2[j][c] + s_pt_up1[j][c]*2 + s_pt_mid[j][c]*4 + s_pt_down1[j][c]*2 + s_pt_down2[j][c];
+
+                // scales range back to [0,255]
+                d_pt[j][c] = res/10;
+
+            }
+        }
+
+    }
+
+    return(0);
+}

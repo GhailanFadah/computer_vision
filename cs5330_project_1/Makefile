@@ -8,7 +8,7 @@ CXXFLAGS = -std=c++17 -O3 -Wall
 OPENCV = `pkg-config --cflags --libs opencv4`
 
 # Targets
-TARGETS = imgDisplay vidDisplay
+TARGETS = imgDisplay vidDisplay timeBlur
 
 # Default rule
 all: $(TARGETS)
@@ -20,6 +20,9 @@ imgDisplay: imgDisplay.cpp
 # vidDisplay build
 vidDisplay: vidDisplay.cpp filters.cpp
 	$(CXX) $(CXXFLAGS) vidDisplay.cpp filters.cpp -o vidDisplay $(OPENCV)
+
+timeBlur: vidDisplay.cpp filters.cpp
+	$(CXX) $(CXXFLAGS) timeBlur.cpp filters.cpp -o timeBlur $(OPENCV)
 
 # Clean
 clean:

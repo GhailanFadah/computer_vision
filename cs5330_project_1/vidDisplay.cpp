@@ -6,9 +6,12 @@ Program reads in a live stream from camera and allows applying different filters
 */
 #include <cstdio>
 #include <cstring>
+#include <cstdlib>
+#include <cmath>
 
 #include "opencv2/opencv.hpp"
 #include "filters.h"
+#include "faceDetect.h"
 int main(int argc, char *argv[]) {
     /*
     function streams a video from device camera and allows different filters and processing to the stream
@@ -41,6 +44,8 @@ int main(int argc, char *argv[]) {
         cv::Mat my_Ysobel;
         cv::Mat my_mag;
         cv::Mat my_quant;
+        std::vector<cv::Rect> faces;
+        cv::Rect last(0, 0, 0, 0);
 
        
         char dis = 'c';
@@ -53,7 +58,7 @@ int main(int argc, char *argv[]) {
                 }  
                 
                 if (dis == 'g'){
-                    cvtColor(frame, grey, cv::COLOR_BGRA2GRAY);
+                    cvtColor(frame, grey, cv::COLOR_BGRA2GRAY, 0);
                     cv::imshow("Video", grey);
                 }else if (dis == 'h'){
                     greyscale(frame, my_gray);
@@ -80,6 +85,19 @@ int main(int argc, char *argv[]) {
                 }else if(dis == 'l'){
                     blurQuantize(frame, my_quant, 10);
                     cv::imshow("Video", my_quant);
+                }else if(dis == 'f'){
+                    cv::cvtColor( frame, grey, cv::COLOR_BGR2GRAY, 0);
+                    detectFaces( grey, faces );
+                    drawBoxes( frame, faces );
+
+                    if( faces.size() > 0 ) {
+                        last.x = (faces[0].x + last.x)/2;
+                        last.y = (faces[0].y + last.y)/2;
+                        last.width = (faces[0].width + last.width)/2;
+                        last.height = (faces[0].height + last.height)/2;
+                    }
+
+                    cv::imshow("Video", frame);
                 }else{
                     cv::imshow("Video", frame);
                 }
@@ -104,6 +122,8 @@ int main(int argc, char *argv[]) {
                     dis = 'm';
                 }else if(key == 'l'){
                     dis = 'l';
+                }else if(key == 'f'){
+                    dis = 'f';
                 }else if (key == 's'){
 
                     if (dis == 'g'){
@@ -122,6 +142,8 @@ int main(int argc, char *argv[]) {
                         imwrite("frame.png", my_mag);
                     }else if(dis == 'l'){
                         imwrite("frame.png", my_quant);
+                    }else if(dis == 'f'){
+                        imwrite("frame.png", frame);
                     }else{
                         imwrite("frame.png", frame);
                     }

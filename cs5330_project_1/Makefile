@@ -8,7 +8,7 @@ CXXFLAGS = -std=c++17 -O3 -Wall
 OPENCV = `pkg-config --cflags --libs opencv4`
 
 # Targets
-TARGETS = imgDisplay vidDisplay timeBlur
+TARGETS = imgDisplay vidDisplay timeBlur showFace
 
 # Default rule
 all: $(TARGETS)
@@ -18,11 +18,14 @@ imgDisplay: imgDisplay.cpp
 	$(CXX) $(CXXFLAGS) imgDisplay.cpp -o imgDisplay $(OPENCV)
 
 # vidDisplay build
-vidDisplay: vidDisplay.cpp filters.cpp
-	$(CXX) $(CXXFLAGS) vidDisplay.cpp filters.cpp -o vidDisplay $(OPENCV)
+vidDisplay: vidDisplay.cpp filters.cpp faceDetect.cpp
+	$(CXX) $(CXXFLAGS) vidDisplay.cpp filters.cpp faceDetect.cpp -o vidDisplay $(OPENCV)
 
 timeBlur: vidDisplay.cpp filters.cpp
 	$(CXX) $(CXXFLAGS) timeBlur.cpp filters.cpp -o timeBlur $(OPENCV)
+
+showFace: showFaces.cpp faceDetect.cpp
+	$(CXX) $(CXXFLAGS) faceDetect.cpp showFaces.cpp -o showFace $(OPENCV)
 
 # Clean
 clean:

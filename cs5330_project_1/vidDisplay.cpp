@@ -40,6 +40,7 @@ int main(int argc, char *argv[]) {
         cv::Mat my_Xsobel;
         cv::Mat my_Ysobel;
         cv::Mat my_mag;
+        cv::Mat my_quant;
 
        
         char dis = 'c';
@@ -76,6 +77,9 @@ int main(int argc, char *argv[]) {
                     sobelX3x3(frame, raw_my_Xsobel);
                     magnitude(raw_my_Xsobel, raw_my_Ysobel, my_mag);
                     cv::imshow("Video", my_mag);
+                }else if(dis == 'l'){
+                    blurQuantize(frame, my_quant, 10);
+                    cv::imshow("Video", my_quant);
                 }else{
                     cv::imshow("Video", frame);
                 }
@@ -98,6 +102,8 @@ int main(int argc, char *argv[]) {
                     dis = 'y';
                 }else if(key == 'm'){
                     dis = 'm';
+                }else if(key == 'l'){
+                    dis = 'l';
                 }else if (key == 's'){
 
                     if (dis == 'g'){
@@ -114,6 +120,8 @@ int main(int argc, char *argv[]) {
                         imwrite("frame.png", my_Ysobel);
                     }else if(dis == 'm'){
                         imwrite("frame.png", my_mag);
+                    }else if(dis == 'l'){
+                        imwrite("frame.png", my_quant);
                     }else{
                         imwrite("frame.png", frame);
                     }

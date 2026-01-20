@@ -245,7 +245,14 @@ int sobelY3x3( cv::Mat &src, cv::Mat &dst ){
 
 }
 
-int magnitude( cv::Mat &sx, cv::Mat &sy, cv::Mat &dst ){
+int magnitude( cv::Mat &sx, cv::Mat &sy, cv::Mat &dst){
+      /*
+    function determines mag of sx, sy and claps mag val to [0-255] range
+    
+    input: cv::Mat &sx, cv::Mat &sy, cv::Mat &dst
+    output <int> 0
+    */
+
 
     dst.create(sx.size(), CV_8UC3);
 
@@ -260,6 +267,39 @@ int magnitude( cv::Mat &sx, cv::Mat &sy, cv::Mat &dst ){
 
                 int mag = std::sqrt(px[j][c]*px[j][c] + py[j][c]*py[j][c]);
                 pd[j][c] = cv::saturate_cast<uchar>(mag);
+             }
+
+        }
+    }
+
+    return(0);
+
+}
+
+int blurQuantize(cv::Mat &src, cv::Mat &dst, int levels){
+       /*
+    function blurs and quants input based on number of levels
+    
+    input: cv::Mat &src, cv::Mat &dst, int levels 
+    output <int> 0
+    */
+
+    cv::Mat tem;
+
+    blur5x5_2(src, tem);
+    tem.copyTo(dst);
+
+    int bucket = 256/levels;
+
+    for (int i = 0; i<src.rows; i++){
+        cv::Vec3b *ps = tem.ptr<cv::Vec3b>(i);
+        cv::Vec3b *pd = dst.ptr<cv::Vec3b>(i);
+        for (int j = 0; j<src.cols; j++){
+
+             for(int c=0;c<3;c++){
+
+                int res = ps[j][c]/bucket;
+                pd[j][c] = res*bucket;
              }
 
         }

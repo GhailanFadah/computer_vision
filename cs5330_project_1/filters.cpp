@@ -6,6 +6,7 @@ Program creates different filters for image processing
 */
 
 #include "opencv2/opencv.hpp"
+#include <cmath>
 
 int greyscale(cv::Mat &src, cv::Mat &dst){
     /*
@@ -81,11 +82,11 @@ int sepia(cv::Mat &src, cv::Mat &dst){
 int blur5x5_1(cv::Mat &src, cv::Mat &dst){
     /*
     function create a custom gauss 5X5 filter using at to access pxs
-    12421
-    24842
-    481684
-    24842
-    12421
+   [1,2,4,2,1
+    2,4,8,4,2
+    4,8,16,8,4
+    2,4,8,4,2
+    1,2,4,2,1]
     input: cv::Mat &src, cv::Mat &dst
     output <int> 0
     */
@@ -116,11 +117,11 @@ int blur5x5_1(cv::Mat &src, cv::Mat &dst){
 int blur5x5_2(cv::Mat &src, cv::Mat &dst){
     /*
     function create a custom gauss 5X5 filter using pointers to access pxs
-    [12421
-    24842
-    481684
-    24842
-    12421]
+    [1,2,4,2,1
+    2,4,8,4,2
+    4,8,16,8,4
+    2,4,8,4,2
+    1,2,4,2,1]
     input: cv::Mat &src, cv::Mat &dst
     output <int> 0
     */
@@ -170,4 +171,100 @@ int blur5x5_2(cv::Mat &src, cv::Mat &dst){
     }
 
     return(0);
+}
+
+int sobelX3x3( cv::Mat &src, cv::Mat &dst ){
+     /*
+    function create a custom sobel 3X3 filter in x-direction using pointers to access pxs
+    [-1,0,1
+    -2,0,2
+    -1,0,1]
+    input: cv::Mat &src, cv::Mat &dst
+    output <int> 0
+    */
+
+    dst.create(src.size(), CV_16SC3);
+
+    for (int i = 1; i<src.rows-1; i++){
+        cv::Vec3b *s_pt_up = src.ptr<cv::Vec3b>(i-1);
+        cv::Vec3b *s_pt_mid = src.ptr<cv::Vec3b>(i);
+        cv::Vec3b *s_pt_down = src.ptr<cv::Vec3b>(i+1);
+        cv::Vec3s *d_pt = dst.ptr<cv::Vec3s>(i);
+
+        for (int j = 1; j<src.cols-1; j++){
+
+            for(int c=0;c<3;c++){
+
+                int res = s_pt_up[j-1][c]*-1 + s_pt_up[j][c]*0 + s_pt_up[j+1][c]*1
+                + s_pt_mid[j-1][c]*-2 + s_pt_mid[j][c]*0 + s_pt_mid[j+1][c]*2
+                + s_pt_down[j-1][c]*-1 + s_pt_down[j][c]*0 + s_pt_down[j+1][c]*1;
+
+                // range [-255-255]
+                d_pt[j][c] = res;
+
+            }
+        }
+    }
+    return(0);
+}
+
+int sobelY3x3( cv::Mat &src, cv::Mat &dst ){
+     /*
+    function create a custom sobel 3X3 filter in y-direction using pointers to access pxs
+    [1,2,1
+    0,0,0
+    -1,-2,-1]
+    input: cv::Mat &src, cv::Mat &dst
+    output <int> 0
+    */
+
+    dst.create(src.size(), CV_16SC3);
+
+    for (int i = 1; i<src.rows-1; i++){
+        cv::Vec3b *s_pt_up = src.ptr<cv::Vec3b>(i-1);
+        cv::Vec3b *s_pt_mid = src.ptr<cv::Vec3b>(i);
+        cv::Vec3b *s_pt_down = src.ptr<cv::Vec3b>(i+1);
+        cv::Vec3s *d_pt = dst.ptr<cv::Vec3s>(i);
+
+        for (int j = 1; j<src.cols-1; j++){
+
+            for(int c=0;c<3;c++){
+
+                int res = s_pt_up[j-1][c]*1 + s_pt_up[j][c]*2 + s_pt_up[j+1][c]*1
+                + s_pt_mid[j-1][c]*0 + s_pt_mid[j][c]*0 + s_pt_mid[j+1][c]*0
+                + s_pt_down[j-1][c]*-1 + s_pt_down[j][c]*-2 + s_pt_down[j+1][c]*-1;
+
+                // range [-255-255]
+                d_pt[j][c] = res;
+
+            }
+        }
+    }
+
+    return (0);
+
+}
+
+int magnitude( cv::Mat &sx, cv::Mat &sy, cv::Mat &dst ){
+
+    dst.create(sx.size(), CV_8UC3);
+
+    for (int i = 0; i<sx.rows; i++){
+        cv::Vec3s *px = sx.ptr<cv::Vec3s>(i);
+        cv::Vec3s *py = sy.ptr<cv::Vec3s>(i);
+        cv::Vec3b *pd = dst.ptr<cv::Vec3b>(i);
+
+        for (int j = 0; j<sx.cols; j++){
+
+             for(int c=0;c<3;c++){
+
+                int mag = std::sqrt(px[j][c]*px[j][c] + py[j][c]*py[j][c]);
+                pd[j][c] = cv::saturate_cast<uchar>(mag);
+             }
+
+        }
+    }
+
+    return(0);
+
 }

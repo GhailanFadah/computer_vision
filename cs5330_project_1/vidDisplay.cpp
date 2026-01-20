@@ -35,6 +35,12 @@ int main(int argc, char *argv[]) {
         cv::Mat my_gray;
         cv::Mat my_sepia;
         cv::Mat my_blur;
+        cv::Mat raw_my_Xsobel;
+        cv::Mat raw_my_Ysobel;
+        cv::Mat my_Xsobel;
+        cv::Mat my_Ysobel;
+        cv::Mat my_mag;
+
        
         char dis = 'c';
 
@@ -43,7 +49,7 @@ int main(int argc, char *argv[]) {
                 if( frame.empty() ) {
                   printf("frame is empty\n");
                   break;
-                }    
+                }  
                 
                 if (dis == 'g'){
                     cvtColor(frame, grey, cv::COLOR_BGRA2GRAY);
@@ -57,13 +63,26 @@ int main(int argc, char *argv[]) {
                 }else if (dis == 'b') {
                     blur5x5_2(frame, my_blur);
                     cv::imshow("Video", my_blur);
+                }else if(dis == 'x'){
+                    sobelX3x3(frame, raw_my_Xsobel);
+                    cv::convertScaleAbs(raw_my_Xsobel, my_Xsobel);
+                    cv::imshow("Video", my_Xsobel);
+                }else if (dis == 'y'){
+                    sobelY3x3(frame, raw_my_Ysobel);
+                    cv::convertScaleAbs(raw_my_Ysobel, my_Ysobel);
+                    cv::imshow("Video", my_Ysobel);
+                }else if(dis == 'm'){
+                    sobelY3x3(frame, raw_my_Ysobel);
+                    sobelX3x3(frame, raw_my_Xsobel);
+                    magnitude(raw_my_Xsobel, raw_my_Ysobel, my_mag);
+                    cv::imshow("Video", my_mag);
                 }else{
                     cv::imshow("Video", frame);
                 }
                 
 
                 // see if there is a waiting keystroke
-                char key = cv::waitKey(5);
+                char key = cv::waitKey(10);
 
                 if (key == 'g'){
                     dis = 'g';
@@ -73,6 +92,12 @@ int main(int argc, char *argv[]) {
                     dis = 'p';
                 }else if(key == 'b'){
                     dis = 'b';
+                }else if(key == 'x'){
+                    dis = 'x';
+                }else if(key == 'y'){
+                    dis = 'y';
+                }else if(key == 'm'){
+                    dis = 'm';
                 }else if (key == 's'){
 
                     if (dis == 'g'){
@@ -83,6 +108,12 @@ int main(int argc, char *argv[]) {
                         imwrite("frame.png", my_sepia);
                     }else if(dis == 'b'){
                         imwrite("frame.png", my_blur);
+                    }else if (dis == 'x'){
+                        imwrite("frame.png", my_Xsobel);
+                    }else if (dis == 'y'){
+                        imwrite("frame.png", my_Ysobel);
+                    }else if(dis == 'm'){
+                        imwrite("frame.png", my_mag);
                     }else{
                         imwrite("frame.png", frame);
                     }

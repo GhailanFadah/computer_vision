@@ -306,5 +306,100 @@ int blurQuantize(cv::Mat &src, cv::Mat &dst, int levels){
     }
 
     return(0);
+}
+
+int blurDepth(cv::Mat &src, cv::Mat &dst, cv::Mat &depth){
+       /*
+    function blurs image based on Depth: further = more blur
+    
+    input: cv::Mat &src, cv::Mat &dst
+    output <int> 0
+    */
+
+    cv::Mat blur;
+    cv::GaussianBlur(src, blur, cv::Size(31, 31), 0);
+    //blur5x5_2(src, blur);
+    src.copyTo(dst);
+
+    
+
+    for (int i = 0; i<src.rows; i++){
+        uchar* dptr = depth.ptr<uchar>(i);
+        cv::Vec3b *ps = src.ptr<cv::Vec3b>(i);
+        cv::Vec3b *pb = blur.ptr<cv::Vec3b>(i);
+        cv::Vec3b *pd = dst.ptr<cv::Vec3b>(i);
+        for (int j = 0; j<src.cols; j++){
+
+            float dep = dptr[j] / 255.0; 
+            float wt = 1.0 - dep;
+
+             for(int c=0;c<3;c++){
+
+                pd[j][c] = static_cast<uchar>((1 - wt) * ps[j][c] + wt * pb[j][c]);
+             }
+
+        }
+    }
+
+    return(0);
+}
+
+int emboss( cv::Mat &sx, cv::Mat &sy, cv::Mat &dst){
+      /*
+    function uses sobel X,Y to add embossing effect
+    
+    input: cv::Mat &sx, cv::Mat &sy, cv::Mat &dst
+    output <int> 0
+    */
+
+
+    dst.create(sx.size(), CV_8UC3);
+
+    for (int i = 0; i<sx.rows; i++){
+        cv::Vec3s *px = sx.ptr<cv::Vec3s>(i);
+        cv::Vec3s *py = sy.ptr<cv::Vec3s>(i);
+        cv::Vec3b *pd = dst.ptr<cv::Vec3b>(i);
+
+        for (int j = 0; j<sx.cols; j++){
+
+             for(int c=0;c<3;c++){
+
+                int em = px[j][c] * 0.7071 + py[j][c] * 0.7071;
+                pd[j][c] = cv::saturate_cast<uchar>(em * 2 + 128);
+             }
+
+        }
+    }
+
+    return(0);
+
+}
+
+int negative(cv::Mat &src, cv::Mat &dst){
+      /*
+    function takes the negative of an image
+    
+    input: cv::Mat &sx, cv::Mat &sy, cv::Mat &dst
+    output <int> 0
+    */
+
+
+    src.copyTo(dst);
+
+    for (int i = 0; i<src.rows; i++){
+        cv::Vec3b *ps = src.ptr<cv::Vec3b>(i);
+        cv::Vec3b *pd = dst.ptr<cv::Vec3b>(i);
+
+        for (int j = 0; j<src.cols; j++){
+
+             for(int c=0;c<3;c++){
+
+                pd[j][c] = 255 - ps[j][c];
+             }
+
+        }
+    }
+
+    return(0);
 
 }

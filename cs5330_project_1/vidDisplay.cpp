@@ -12,6 +12,7 @@ Program reads in a live stream from camera and allows applying different filters
 #include "opencv2/opencv.hpp"
 #include "filters.h"
 #include "faceDetect.h"
+#include "DA2Network.hpp"
 int main(int argc, char *argv[]) {
     /*
     function streams a video from device camera and allows different filters and processing to the stream
@@ -19,6 +20,11 @@ int main(int argc, char *argv[]) {
     output <int> 0
     */
         cv::VideoCapture *capdev;
+
+        // make a DANetwork object
+        DA2Network da_net( "model_fp16.onnx" );
+        const float reduction = 0.5;
+        
 
         // open the video device
         capdev = new cv::VideoCapture(0);
@@ -32,6 +38,8 @@ int main(int argc, char *argv[]) {
                        (int) capdev->get(cv::CAP_PROP_FRAME_HEIGHT));
         printf("Expected size: %d %d\n", refS.width, refS.height);
 
+        float scale_factor = 256.0 / (refS.height*reduction);
+
         cv::namedWindow("Video", 1); // identifies a window
         cv::Mat frame;
         cv::Mat grey;
@@ -44,6 +52,10 @@ int main(int argc, char *argv[]) {
         cv::Mat my_Ysobel;
         cv::Mat my_mag;
         cv::Mat my_quant;
+        cv::Mat my_depth;
+        cv::Mat depth_vis;
+        cv::Mat my_emboss;
+        cv::Mat my_negative;
         std::vector<cv::Rect> faces;
         cv::Rect last(0, 0, 0, 0);
 
@@ -96,7 +108,32 @@ int main(int argc, char *argv[]) {
                         last.width = (faces[0].width + last.width)/2;
                         last.height = (faces[0].height + last.height)/2;
                     }
+                    cv::imshow("Video", frame);
+                }else if (dis == 'd'){
+                    cv::resize( frame, frame, cv::Size(), reduction, reduction );
+                    da_net.set_input( frame, scale_factor );
+                    da_net.run_network( my_depth, frame.size() );
+                    blurDepth(frame, depth_vis, my_depth);
+                    cv::imshow("Video", depth_vis);
+                }else if(dis == 'e'){
+                    sobelY3x3(frame, raw_my_Ysobel);
+                    sobelX3x3(frame, raw_my_Xsobel);
+                    emboss(raw_my_Xsobel, raw_my_Ysobel, my_emboss);
+                    cv::imshow("Video", my_emboss);
+                }else if (dis == 'n') {
+                    negative(frame, my_negative);
+                    cv::imshow("Video", my_negative);
+                }else if (dis == '3'){
+                    cv::cvtColor( frame, grey, cv::COLOR_BGR2GRAY, 0);
+                    detectFaces( grey, faces );
+                    drawBoxes( frame, faces );
+                    for (const auto &face : faces) {
+                        cv::Mat roi_src = frame(face);
+                        cv::Mat roi_dst;
 
+                        negative(roi_src, roi_dst);
+                        roi_dst.copyTo(frame(face));
+                    }
                     cv::imshow("Video", frame);
                 }else{
                     cv::imshow("Video", frame);
@@ -124,6 +161,14 @@ int main(int argc, char *argv[]) {
                     dis = 'l';
                 }else if(key == 'f'){
                     dis = 'f';
+                }else if(key == 'd'){
+                    dis = 'd';
+                }else if(key == 'e'){
+                    dis = 'e';
+                }else if(key == 'n'){
+                    dis = 'n';
+                }else if(key == '3'){
+                    dis = '3';
                 }else if (key == 's'){
 
                     if (dis == 'g'){
@@ -143,6 +188,14 @@ int main(int argc, char *argv[]) {
                     }else if(dis == 'l'){
                         imwrite("frame.png", my_quant);
                     }else if(dis == 'f'){
+                        imwrite("frame.png", frame);
+                    }else if(dis == 'd'){
+                        imwrite("frame.png", depth_vis);
+                    }else if(dis == 'e'){
+                        imwrite("frame.png", my_emboss);
+                    }else if(dis == 'n'){
+                        imwrite("frame.png", my_negative);
+                    }else if(dis == '3'){
                         imwrite("frame.png", frame);
                     }else{
                         imwrite("frame.png", frame);

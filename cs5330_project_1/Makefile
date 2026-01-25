@@ -1,3 +1,8 @@
+# Ghailan Fadah
+# 1/14/26
+# CS5330
+# Makefile for project 1
+
 # Compiler
 CXX = g++
 

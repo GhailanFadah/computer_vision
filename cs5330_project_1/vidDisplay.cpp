@@ -2,12 +2,13 @@
 Ghailan Fadah
 1/14/26
 CS5330
-Program reads in a live stream from camera and allows applying different filters
+Program reads in a live stream from camera or a still image and allows applying different filters
 */
 #include <cstdio>
 #include <cstring>
 #include <cstdlib>
 #include <cmath>
+#include <iostream>
 
 #include "opencv2/opencv.hpp"
 #include "filters.h"
@@ -19,26 +20,43 @@ int main(int argc, char *argv[]) {
     input: N/A
     output <int> 0
     */
-        cv::VideoCapture *capdev;
 
+        int mode = std::stoi(argv[1]);
+
+        if(mode == 2 && argc < 3 || mode > 2 && mode < 1){
+        printf("usage: %s <mode 1 or 2> <image filename>\n ", argv[0]);
+        exit(-1);
+        }
+        
         // make a DANetwork object
         DA2Network da_net( "model_fp16.onnx" );
         const float reduction = 0.5;
+
+        cv::VideoCapture *capdev;
+        capdev = new cv::VideoCapture(0);
+        
+        char filename[256];
         
 
         // open the video device
-        capdev = new cv::VideoCapture(0);
-        if( !capdev->isOpened() ) {
-                printf("Unable to open video device\n");
-                return(-1);
-        }
-
-        // get some properties of the image
-        cv::Size refS( (int) capdev->get(cv::CAP_PROP_FRAME_WIDTH ),
+        if(mode == 1){
+            //cv::VideoCapture *capdev;
+            //capdev = new cv::VideoCapture(0);
+            if( !capdev->isOpened() ) {
+                    printf("Unable to open video device\n");
+                    return(-1);
+            }
+            // get some properties of the image
+            cv::Size refS( (int) capdev->get(cv::CAP_PROP_FRAME_WIDTH ),
                        (int) capdev->get(cv::CAP_PROP_FRAME_HEIGHT));
-        printf("Expected size: %d %d\n", refS.width, refS.height);
+             printf("Expected size: %d %d\n", refS.width, refS.height);
 
-        float scale_factor = 256.0 / (refS.height*reduction);
+           
+        }else if(mode == 2){
+            //char filename[256];
+            strcpy(filename, argv[2]);
+        }
+        float scale_factor = 1.0;
 
         cv::namedWindow("Video", 1); // identifies a window
         cv::Mat frame;
@@ -56,14 +74,20 @@ int main(int argc, char *argv[]) {
         cv::Mat depth_vis;
         cv::Mat my_emboss;
         cv::Mat my_negative;
+        cv::Mat my_cartoon;
+        cv::Mat my_glow;
         std::vector<cv::Rect> faces;
         cv::Rect last(0, 0, 0, 0);
 
        
-        char dis = 'c';
+        char dis;
 
         for(;;) {
-                *capdev >> frame; // get a new frame from the camera, treat as a stream
+                if(mode == 2){
+                    frame = cv::imread(filename);
+                }else if (mode == 1){
+                    *capdev >> frame; // get a new frame from the camera, treat as a stream
+                }
                 if( frame.empty() ) {
                   printf("frame is empty\n");
                   break;
@@ -135,11 +159,15 @@ int main(int argc, char *argv[]) {
                         roi_dst.copyTo(frame(face));
                     }
                     cv::imshow("Video", frame);
+                }else if (dis == 'c'){
+                    cartoon(frame, my_cartoon);
+                    cv::imshow("Video", my_cartoon);
+                }else if (dis == 'z'){
+                    edgeGlow(frame, my_glow);
+                    cv::imshow("Video", my_glow);
                 }else{
                     cv::imshow("Video", frame);
                 }
-                
-
                 // see if there is a waiting keystroke
                 char key = cv::waitKey(10);
 
@@ -169,6 +197,10 @@ int main(int argc, char *argv[]) {
                     dis = 'n';
                 }else if(key == '3'){
                     dis = '3';
+                }else if(key == 'c'){
+                    dis = 'c';
+                }else if(key == 'z'){
+                    dis = 'z';
                 }else if (key == 's'){
 
                     if (dis == 'g'){
@@ -197,6 +229,10 @@ int main(int argc, char *argv[]) {
                         imwrite("frame.png", my_negative);
                     }else if(dis == '3'){
                         imwrite("frame.png", frame);
+                    }else if(dis == 'c'){
+                        imwrite("frame.png", my_cartoon);
+                    }else if(dis == 'z'){
+                        imwrite("frame.png", my_glow);
                     }else{
                         imwrite("frame.png", frame);
                     }
@@ -205,7 +241,8 @@ int main(int argc, char *argv[]) {
                 }
                
         }
-
+        
         delete capdev;
+    
         return(0);
 }

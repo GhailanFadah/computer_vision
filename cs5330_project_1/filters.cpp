@@ -57,9 +57,9 @@ int sepia(cv::Mat &src, cv::Mat &dst){
         for (int j = 0; j<src.cols; j++){
             
             // gets values for each color channel
-            char blue_value = ptr[j][0];
-            char green_value = ptr[j][1];
-            char red_value = ptr[j][2];
+            int blue_value = ptr[j][0];
+            int green_value = ptr[j][1];
+            int red_value = ptr[j][2];
 
             // new values
             int new_b = 0.131*blue_value + 0.534*green_value + 0.272*red_value;
@@ -174,7 +174,7 @@ int blur5x5_2(cv::Mat &src, cv::Mat &dst){
 }
 
 int sobelX3x3( cv::Mat &src, cv::Mat &dst ){
-     /*
+    /*
     function create a custom sobel 3X3 filter in x-direction using pointers to access pxs
     [-1,0,1
     -2,0,2
@@ -209,7 +209,7 @@ int sobelX3x3( cv::Mat &src, cv::Mat &dst ){
 }
 
 int sobelY3x3( cv::Mat &src, cv::Mat &dst ){
-     /*
+    /*
     function create a custom sobel 3X3 filter in y-direction using pointers to access pxs
     [1,2,1
     0,0,0
@@ -246,7 +246,7 @@ int sobelY3x3( cv::Mat &src, cv::Mat &dst ){
 }
 
 int magnitude( cv::Mat &sx, cv::Mat &sy, cv::Mat &dst){
-      /*
+    /*
     function determines mag of sx, sy and claps mag val to [0-255] range
     
     input: cv::Mat &sx, cv::Mat &sy, cv::Mat &dst
@@ -277,7 +277,7 @@ int magnitude( cv::Mat &sx, cv::Mat &sy, cv::Mat &dst){
 }
 
 int blurQuantize(cv::Mat &src, cv::Mat &dst, int levels){
-       /*
+    /*
     function blurs and quants input based on number of levels
     
     input: cv::Mat &src, cv::Mat &dst, int levels 
@@ -309,7 +309,7 @@ int blurQuantize(cv::Mat &src, cv::Mat &dst, int levels){
 }
 
 int blurDepth(cv::Mat &src, cv::Mat &dst, cv::Mat &depth){
-       /*
+    /*
     function blurs image based on Depth: further = more blur
     
     input: cv::Mat &src, cv::Mat &dst
@@ -345,7 +345,7 @@ int blurDepth(cv::Mat &src, cv::Mat &dst, cv::Mat &depth){
 }
 
 int emboss( cv::Mat &sx, cv::Mat &sy, cv::Mat &dst){
-      /*
+    /*
     function uses sobel X,Y to add embossing effect
     
     input: cv::Mat &sx, cv::Mat &sy, cv::Mat &dst
@@ -376,7 +376,7 @@ int emboss( cv::Mat &sx, cv::Mat &sy, cv::Mat &dst){
 }
 
 int negative(cv::Mat &src, cv::Mat &dst){
-      /*
+    /*
     function takes the negative of an image
     
     input: cv::Mat &sx, cv::Mat &sy, cv::Mat &dst
@@ -403,3 +403,134 @@ int negative(cv::Mat &src, cv::Mat &dst){
     return(0);
 
 }
+
+int thresholdEdges(cv::Mat &src, cv::Mat &dst, int thresh) {
+    /*
+    function determines edges based on the threshold <thresh>
+    
+    input: cv::Mat &src, cv::Mat &dst, int iterations
+    output <int> 0
+    */
+    dst.create(src.size(), src.type());
+
+    for(int i=0;i<src.rows;i++){
+        cv::Vec3b *ps = src.ptr<cv::Vec3b>(i);
+        cv::Vec3b *pd = dst.ptr<cv::Vec3b>(i);
+        for(int j=0;j<src.cols;j++){
+            uchar v = ps[j][0]; // magnitude same across channels
+            uchar out = (v > thresh) ? 255 : 0;
+            pd[j] = cv::Vec3b(out/2,out/4,out/1);
+            
+        }
+    }
+    return 0;
+}
+
+int strongBlur(cv::Mat &src, cv::Mat &dst, int iter) {
+    /*
+    function adds blur to an image certain iterations. creates more blur
+    than just the single blur filter
+    
+    input: cv::Mat &src, cv::Mat &dst, int iterations
+    output <int> 0
+    */
+
+    cv::Mat tmp1, tmp2;
+    src.copyTo(tmp1);
+
+    for(int i=0;i<iter;i++){
+        blur5x5_2(tmp1, tmp2);
+        tmp2.copyTo(tmp1);
+    }
+
+    tmp1.copyTo(dst);
+    return 0;
+}
+
+int cartoon(cv::Mat &src, cv::Mat &dst){
+    /*
+    function turns an image into carttonish version
+    
+    input: sc::Mat &src, cv::Mat &dst, int strength, int edge_thresh
+    output <int> 0
+    */
+
+    dst.create(src.size(), src.type());
+    cv::Mat smooth, tmp;
+    src.copyTo(smooth);
+
+    
+    strongBlur(smooth, tmp, 8);
+    tmp.copyTo(smooth);
+    
+
+    cv::Mat grad_x, grad_y, mag, mag_th;
+    sobelX3x3(src, grad_x);
+    sobelY3x3(src, grad_y);
+    magnitude(grad_x, grad_y, mag);
+    thresholdEdges(mag, mag_th, 100);
+
+    int levels = 10;
+    for(int i=0;i<src.rows;i++){
+        cv::Vec3b *ps = smooth.ptr<cv::Vec3b>(i);
+        cv::Vec3b *pe = mag_th.ptr<cv::Vec3b>(i);
+        cv::Vec3b *pd = dst.ptr<cv::Vec3b>(i);
+        for(int j=0;j<src.cols;j++){
+            for(int c=0;c<3;c++){
+                // Multiply smooth pixel with edge mask (0 or 1)
+                pd[j][c] = (ps[j][c] * pe[j][c]) / 255;
+                
+                // quantize
+                pd[j][c] = (ps[j][c] / levels) * levels;
+            }
+        }
+    }
+    return(0);
+}
+
+int addGlow(cv::Mat &src, cv::Mat &glow, cv::Mat &dst, float strength) {
+    /*
+    function adds strength to edges to make them more visable
+    
+    input: cv::Mat &src, cv::Mat &glow, cv::Mat &dst, float strength
+    output <int> 0
+    */
+    
+    dst.create(src.size(), src.type());
+
+    for(int i=0;i<src.rows;i++){
+        cv::Vec3b *ps = src.ptr<cv::Vec3b>(i);
+        cv::Vec3b *pg = glow.ptr<cv::Vec3b>(i);
+        cv::Vec3b *pd = dst.ptr<cv::Vec3b>(i);
+
+        for(int j=0;j<src.cols;j++){
+            for(int c=0;c<3;c++){
+                int val = ps[j][c] + strength * pg[j][c];
+                pd[j][c] = cv::saturate_cast<uchar>(val);
+            }
+        }
+    }
+    return 0;
+}
+
+int edgeGlow(cv::Mat &src, cv::Mat &dst) {
+    /*
+    function adds sci-fi effect to an image. highlighting edges
+    
+    input: cv::Mat &src, cv::Mat &dst
+    output <int> 0
+    */
+    cv::Mat sx, sy, mag, edges, glow;
+
+    sobelX3x3(src, sx);
+    sobelY3x3(src, sy);
+    magnitude(sx, sy, mag);
+
+    thresholdEdges(mag, edges, 80);
+    strongBlur(edges, glow, 6);
+    addGlow(src, glow, dst, 0.8);
+
+    return 0;
+}
+
+

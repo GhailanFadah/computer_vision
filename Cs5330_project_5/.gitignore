@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+
+# PyTorch model weights
+*.pth
+
+# Experiment results
+
+# MNIST/FashionMNIST downloaded data (large, auto-downloaded)
+data/
+!data/my_digits/
+!data/my_digits/**
+!data/my_greek/
+!data/my_greek/**
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/

@@ -2,6 +2,8 @@
 
 **Ghailan Fadah | CS5330 | Spring 2026**
 
+my images dataset: https://github.com/GhailanFadah/computer_vision/tree/main/Cs5330_project_5
+
 A series of deep learning tasks using PyTorch and torchvision, covering digit recognition, transfer learning, network analysis, transformer-based classification, hyperparameter experimentation, and live inference.
 
 ---
